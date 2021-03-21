@@ -1,4 +1,8 @@
+import os
+import psutil
 from tqdm import tqdm
+import time
+import argparse
 
 class Apriori:
     def __init__(self, root):
@@ -74,7 +78,7 @@ class Apriori:
 
 
     def run(self, min_sup = 3000):
-        self.min_sup = min_sup
+        self.min_sup = min_sup*len(self.dat)/100
         
         c1 = self.make_c1()
         l1 = self.make_l1(c1)
@@ -87,6 +91,7 @@ class Apriori:
             self.process_line(self.root,line,depth=1)
 #        self.hash_pointer = dict()
         l =l1
+        self.max_mem = -1
         for depth in range(1,100000000):
             print("###########")
             c = self.join(l)
@@ -107,6 +112,9 @@ class Apriori:
             for i in l.keys():
                 print(depth, i, len(i))
             print(f"Candidate {len(c.keys())} Pruned {len(l.keys())}")
+            process = psutil.Process(os.getpid())                     
+            mem = process.memory_info().rss /1024
+            self.max_mem = max(self.max_mem, mem)
 class Node:
     def __init__(self, data):
         self.data = data
@@ -126,9 +134,21 @@ def traverse(node):
     for child in node.children:
         traverse(child)
 
-root = Node("")
-apriori = Apriori(root)
-apriori.read_data()
-apriori.run()
-#traverse(apriori.root)
-print(apriori.hash_pointer)
+if __name__ == "__main__":
+    start_time = time.time()
+    my_parser = argparse.ArgumentParser(description='')
+    my_parser.add_argument('-p', help='the path to list')
+    #my_parser.add_argument("-e",action="store_true",help="just a flag argument")
+    my_parser.add_argument('-m', help='min support in %')
+    args = my_parser.parse_args()
+
+
+    
+    root = Node("")
+    apriori = Apriori(root)
+    apriori.read_data(vars(args)['p'])
+    apriori.run(int(vars(args)['m']))
+    #traverse(apriori.root)
+    print(time.time()-start_time)
+    print(apriori.max_mem)
+#print(apriori.hash_pointer)

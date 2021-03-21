@@ -1,3 +1,7 @@
+import os
+import psutil
+import time
+import argparse
 from itertools import combinations
 from tqdm import tqdm
 
@@ -5,7 +9,7 @@ class FP:
     def __init__(self, root):
         self.root = root
         #self.result = dict()
-    
+        self.max_mem = -1    
     def make_c1(self):
         c1 = dict()
         for line in self.dat:
@@ -85,13 +89,13 @@ class FP:
         #print(values)
         for value in values:
             cnt = value.count
-            self.recursive_count_(pattern, value, cnt, tmp)
+            self.recursive_count_(pattern, value.parent, cnt, tmp)
     def extract(self, last, values):
         all_found = {}
         all_patterns = []
         for value in values:
             cnt = value.count
-            found = self.down_to_up(value, "")
+            found = self.down_to_up(value.parent, "")
             all_patterns.append(found)
             for i in found:
                 if i in all_found:
@@ -113,12 +117,13 @@ class FP:
                 pattern.replace(key,'')
             first = True
             for i in range(len(pattern), 0, -1):
-                for l in combinations(pattern, i+1):
-                    #print(len(pattern), ''.join(l))    
+                for l in combinations(pattern, i):
+                    #print(''.join(l))
+                    #print([ord(x) for x in ''.join(l)])
                     if first:
                         #print(key, values)
                         self.recursive_count(''.join(l), values, cnt, tmp)
-                        print(tmp)
+                        #print(tmp)
                         first = False
                     cur_count = self.min_sup
                     for alpha in ''.join(l):
@@ -127,7 +132,9 @@ class FP:
                             break
                     if cur_count >= self.min_sup:
                         print([ord(x) for x in ''.join(l)+last])
-
+        process = psutil.Process(os.getpid())                           
+        mem = process.memory_info().rss /1024
+        self.max_mem = max(self.max_mem, mem)
         #print(all_found)
         #merged_str = ""
         #for key in all_found.keys():
@@ -137,9 +144,9 @@ class FP:
 
 
 
-    def run(self, min_sup=3000):
-        self.min_sup = min_sup
-
+    def run(self, min_sup=70):
+        self.min_sup = min_sup*len(self.dat)/100
+        print(self.min_sup)
         c1 = self.make_c1()
         l1 = self.make_l1(c1)
         #print(l1)
@@ -179,11 +186,22 @@ def traverse(node):
         traverse(child)
 
 
-root = Node("")
-fp = FP(root)
+if __name__ == "__main__":
+    start_time = time.time()
+    my_parser = argparse.ArgumentParser(description='')
+    my_parser.add_argument('-p', help='the path to list')
+    #my_parser.add_argument("-e",action="store_true",help="just a flag argument")
+    my_parser.add_argument('-m', help='min support in %')
+    args = my_parser.parse_args()
 
-fp.read_data()
-fp.run()
+
+    root = Node("")
+    fp = FP(root)
+
+    fp.read_data(vars(args)['p'])
+    fp.run(int(vars(args)['m']))
+    print(time.time()-start_time)
+    print(fp.max_mem)
 
 #traverse(fp.root)
 #a = Node("a"); root.add_child(a);
