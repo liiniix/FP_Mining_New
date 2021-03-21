@@ -6,7 +6,9 @@ from itertools import combinations
 from tqdm import tqdm
 
 class FP:
-    def __init__(self, root):
+    def __init__(self, root, destination):
+        self.destination = destination
+        self.f = open(destination,'w')
         self.root = root
         #self.result = dict()
         self.max_mem = -1    
@@ -131,7 +133,9 @@ class FP:
                         if cur_count < self.min_sup:
                             break
                     if cur_count >= self.min_sup:
-                        print([ord(x) for x in ''.join(l)+last])
+                        abul = [ord(x) for x in ''.join(l)+last]
+                        print(abul)
+                        self.f.write(str(abul)+'\n')
         process = psutil.Process(os.getpid())                           
         mem = process.memory_info().rss /1024
         self.max_mem = max(self.max_mem, mem)
@@ -149,7 +153,9 @@ class FP:
         print(self.min_sup)
         c1 = self.make_c1()
         l1 = self.make_l1(c1)
-        #print(l1)
+        for key in l1.keys():
+            self.f.write("["+str(ord(key))+"]"+'\n')
+        
         p1 = dict(sorted(l1.items(), key=lambda kv: kv[1], reverse=True))
         #print(p1)
         ht = {}
@@ -192,17 +198,18 @@ if __name__ == "__main__":
     my_parser.add_argument('-p', help='the path to list')
     #my_parser.add_argument("-e",action="store_true",help="just a flag argument")
     my_parser.add_argument('-m', help='min support in %')
+    my_parser.add_argument('-d', help='destination file')
     args = my_parser.parse_args()
 
 
     root = Node("")
-    fp = FP(root)
+    fp = FP(root, vars(args)['d'])
 
     fp.read_data(vars(args)['p'])
     fp.run(int(vars(args)['m']))
-    print(time.time()-start_time)
-    print(fp.max_mem)
-
+    print("Execution time: ", time.time()-start_time)
+    print("Memory Needed: " ,fp.max_mem)
+    os.system('awk -i inplace \'!seen[$0]++\' '+ vars(args)['d'])
 #traverse(fp.root)
 #a = Node("a"); root.add_child(a);
 #b = Node("b"); root.add_child(b)

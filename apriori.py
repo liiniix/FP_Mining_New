@@ -5,7 +5,9 @@ import time
 import argparse
 
 class Apriori:
-    def __init__(self, root):
+    def __init__(self, root, dest):
+        self.dest = dest
+        self.f = open(dest, 'w')
         self.root = root
         #self.result = dict()
     
@@ -84,6 +86,8 @@ class Apriori:
         l1 = self.make_l1(c1)
         print(c1)
         print(l1)
+        for key in l1.keys():
+            self.f.write("["+str(ord(key))+"]"+'\n')
         self.hash_pointer = dict()
         for key in l1.keys():
             self.add_l_in_tree(self.root, key, pos=0)
@@ -109,8 +113,10 @@ class Apriori:
                     break
                 if len(key) == depth and value.count >= self.min_sup:
                     l[key] = value.count
-            for i in l.keys():
-                print(depth, i, len(i))
+            for key in l.keys():
+                abul = [ord(i_) for i_ in key]
+                print(abul)
+                self.f.write(str(abul)+'\n')
             print(f"Candidate {len(c.keys())} Pruned {len(l.keys())}")
             process = psutil.Process(os.getpid())                     
             mem = process.memory_info().rss /1024
@@ -140,15 +146,16 @@ if __name__ == "__main__":
     my_parser.add_argument('-p', help='the path to list')
     #my_parser.add_argument("-e",action="store_true",help="just a flag argument")
     my_parser.add_argument('-m', help='min support in %')
+    my_parser.add_argument('-d', help="destination for result")
     args = my_parser.parse_args()
 
 
     
     root = Node("")
-    apriori = Apriori(root)
+    apriori = Apriori(root, vars(args)['d'])
     apriori.read_data(vars(args)['p'])
     apriori.run(int(vars(args)['m']))
     #traverse(apriori.root)
-    print(time.time()-start_time)
-    print(apriori.max_mem)
+    print('Execution time: ', time.time()-start_time)
+    print('Memory Needed: ', apriori.max_mem)
 #print(apriori.hash_pointer)
